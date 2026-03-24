@@ -40,15 +40,40 @@ export default function Home() {
   }
 
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ padding: 20, maxWidth: 420 }}>
       <h2>Eid Assignment Form</h2>
 
-      <input placeholder="Name" onChange={(e) => setName(e.target.value)} /><br />
-      <input placeholder="Job" onChange={(e) => setJob(e.target.value)} /><br />
-      <input placeholder="Computer No" onChange={(e) => setComputerNo(e.target.value)} /><br />
-      <input placeholder="Days" onChange={(e) => setDays(e.target.value)} /><br />
+      <input
+        placeholder="Name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        style={{ width: '100%', marginBottom: 8, padding: 10 }}
+      />
 
-      <button onClick={generatePDF}>Generate PDF</button>
+      <input
+        placeholder="Job"
+        value={job}
+        onChange={(e) => setJob(e.target.value)}
+        style={{ width: '100%', marginBottom: 8, padding: 10 }}
+      />
+
+      <input
+        placeholder="Computer No"
+        value={computerNo}
+        onChange={(e) => setComputerNo(e.target.value)}
+        style={{ width: '100%', marginBottom: 8, padding: 10 }}
+      />
+
+      <input
+        placeholder="Days"
+        value={days}
+        onChange={(e) => setDays(e.target.value)}
+        style={{ width: '100%', marginBottom: 12, padding: 10 }}
+      />
+
+      <button onClick={generatePDF} style={{ padding: '10px 16px' }}>
+        Generate PDF
+      </button>
     </div>
   );
 }
