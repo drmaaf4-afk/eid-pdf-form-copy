@@ -34,7 +34,7 @@ export async function POST(req) {
     const rowHeight = tableHeight - headerHeight;
 
     // Column widths
-    const daysW = 80;
+    const daysW = 100;
     const computerW = 110;
     const jobW = 110;
     const nameW = tableWidth - daysW - computerW - jobW;
