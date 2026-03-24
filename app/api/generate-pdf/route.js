@@ -1,8 +1,7 @@
-import { chromium } from 'playwright';
+import chromium from '@sparticuz/chromium';
+import puppeteer from 'puppeteer-core';
 
 export async function POST(req) {
-  let browser;
-
   try {
     const { name, job, computerNo, days } = await req.json();
 
@@ -19,14 +18,16 @@ export async function POST(req) {
         days: String(days || ''),
       }).toString();
 
-    browser = await chromium.launch({
+    const browser = await puppeteer.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
       headless: true,
     });
 
     const page = await browser.newPage();
 
     await page.goto(url, {
-      waitUntil: 'networkidle',
+      waitUntil: 'networkidle0',
     });
 
     const pdf = await page.pdf({
@@ -40,6 +41,8 @@ export async function POST(req) {
       },
     });
 
+    await browser.close();
+
     return new Response(pdf, {
       status: 200,
       headers: {
@@ -51,9 +54,5 @@ export async function POST(req) {
     return new Response(`PDF generation failed: ${error.message}`, {
       status: 500,
     });
-  } finally {
-    if (browser) {
-      await browser.close();
-    }
   }
 }
