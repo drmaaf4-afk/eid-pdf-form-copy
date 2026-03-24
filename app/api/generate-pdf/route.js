@@ -1,162 +1,59 @@
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
-import fs from 'fs';
-import path from 'path';
+import { chromium } from 'playwright';
 
 export async function POST(req) {
+  let browser;
+
   try {
     const { name, job, computerNo, days } = await req.json();
 
-    // Load template
-    const pdfPath = path.join(process.cwd(), 'public', 'eid-template.pdf');
-    const existingPdfBytes = fs.readFileSync(pdfPath);
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3000';
 
-    const pdfDoc = await PDFDocument.load(existingPdfBytes);
-    const page = pdfDoc.getPages()[0];
+    const url =
+      `${baseUrl}/print?` +
+      new URLSearchParams({
+        name: String(name || ''),
+        job: String(job || ''),
+        computerNo: String(computerNo || ''),
+        days: String(days || ''),
+      }).toString();
 
-    // Fonts
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-
-    // Safe values
-    const safeName = String(name || '').slice(0, 28);
-    const safeJob = String(job || '').slice(0, 18);
-    const safeComputerNo = String(computerNo || '').slice(0, 14);
-    const safeDays = String(days || '').slice(0, 5);
-
-    // =========================
-    // TABLE POSITION (OPTIMIZED)
-    // =========================
-    const tableX = 50;
-    const tableY = 600;
-    const tableWidth = 500;
-    const tableHeight = 50;
-    const headerHeight = 20;
-    const rowHeight = tableHeight - headerHeight;
-
-    // Column widths
-    const daysW = 100;
-    const computerW = 110;
-    const jobW = 110;
-    const nameW = tableWidth - daysW - computerW - jobW;
-
-    const x1 = tableX + daysW;
-    const x2 = x1 + computerW;
-    const x3 = x2 + jobW;
-    const headerBottomY = tableY + rowHeight;
-
-    // =========================
-    // CLEAN OLD TABLE AREA
-    // =========================
-    page.drawRectangle({
-      x: tableX - 3,
-      y: tableY - 3,
-      width: tableWidth + 6,
-      height: tableHeight + 6,
-      color: rgb(1, 1, 1),
+    browser = await chromium.launch({
+      headless: true,
     });
 
-    // =========================
-    // HEADER BACKGROUND
-    // =========================
-    page.drawRectangle({
-      x: tableX,
-      y: headerBottomY,
-      width: tableWidth,
-      height: headerHeight,
-      color: rgb(0.93, 0.93, 0.93),
+    const page = await browser.newPage();
+
+    await page.goto(url, {
+      waitUntil: 'networkidle',
     });
 
-    // =========================
-    // TABLE BORDER
-    // =========================
-    page.drawRectangle({
-      x: tableX,
-      y: tableY,
-      width: tableWidth,
-      height: tableHeight,
-      borderWidth: 1.2,
-      borderColor: rgb(0, 0, 0),
+    const pdf = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: {
+        top: '15mm',
+        bottom: '15mm',
+        left: '15mm',
+        right: '15mm',
+      },
     });
 
-    // Vertical lines
-    [x1, x2, x3].forEach(x => {
-      page.drawLine({
-        start: { x, y: tableY },
-        end: { x, y: tableY + tableHeight },
-        thickness: 1,
-        color: rgb(0, 0, 0),
-      });
-    });
-
-    // Horizontal line
-    page.drawLine({
-      start: { x: tableX, y: headerBottomY },
-      end: { x: tableX + tableWidth, y: headerBottomY },
-      thickness: 1,
-      color: rgb(0, 0, 0),
-    });
-
-    // =========================
-    // TEXT HELPERS
-    // =========================
-    function fitText(text, usedFont, size, maxWidth) {
-      let t = String(text || '');
-      while (t.length > 0 && usedFont.widthOfTextAtSize(t, size) > maxWidth) {
-        t = t.slice(0, -1);
-      }
-      return t;
-    }
-
-    function drawCenteredText(text, x, y, width, height, usedFont, size = 9) {
-      const fitted = fitText(text, usedFont, size, width - 10);
-      const textWidth = usedFont.widthOfTextAtSize(fitted, size);
-
-      const textX = x + (width - textWidth) / 2;
-      const textY = y + (height - size) / 2 + 2;
-
-      page.drawText(fitted, {
-        x: textX,
-        y: textY,
-        size,
-        font: usedFont,
-        color: rgb(0, 0, 0),
-      });
-    }
-
-    // =========================
-    // HEADERS (ENGLISH)
-    // =========================
-    drawCenteredText('Days', tableX, headerBottomY, daysW, headerHeight, boldFont);
-    drawCenteredText('Computer No', x1, headerBottomY, computerW, headerHeight, boldFont);
-    drawCenteredText('Job', x2, headerBottomY, jobW, headerHeight, boldFont);
-    drawCenteredText('Name', x3, headerBottomY, nameW, headerHeight, boldFont);
-
-    // =========================
-    // VALUES
-    // =========================
-    drawCenteredText(safeDays, tableX, tableY, daysW, rowHeight, font);
-    drawCenteredText(safeComputerNo, x1, tableY, computerW, rowHeight, font);
-    drawCenteredText(safeJob, x2, tableY, jobW, rowHeight, font);
-    drawCenteredText(safeName, x3, tableY, nameW, rowHeight, font);
-
-    // =========================
-    // EXPORT PDF
-    // =========================
-    const pdfBytes = await pdfDoc.save();
-
-    return new Response(pdfBytes, {
+    return new Response(pdf, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': 'attachment; filename="eid-form.pdf"',
       },
     });
-
   } catch (error) {
-    console.error(error);
-
     return new Response(`PDF generation failed: ${error.message}`, {
       status: 500,
     });
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
   }
 }
