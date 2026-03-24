@@ -32,10 +32,10 @@ export async function POST(req) {
       });
     }
 
-    drawRightText(safeName, 560, 610, 10, 150);
-    drawRightText(job || '', 430, 610, 10, 120);
-    drawRightText(computerNo || '', 300, 610, 10, 100);
-    drawRightText(days || '', 170, 610, 10, 80);
+    drawRightText(safeName, 540, 610, 10, 145);
+    drawRightText(job || '', 410, 610, 10, 115);
+    drawRightText(computerNo || '', 285, 610, 10, 95);
+    drawRightText(days || '', 160, 610, 10, 70);
 
     const pdfBytes = await pdfDoc.save();
 
