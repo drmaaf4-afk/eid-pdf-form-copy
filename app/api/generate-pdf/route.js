@@ -26,11 +26,11 @@ export async function POST(req) {
     // =========================
     // TABLE POSITION (OPTIMIZED)
     // =========================
-    const tableX = 95;
+    const tableX = 80;
     const tableY = 600;
-    const tableWidth = 470;
-    const tableHeight = 62;
-    const headerHeight = 30;
+    const tableWidth = 500;
+    const tableHeight = 50;
+    const headerHeight = 20;
     const rowHeight = tableHeight - headerHeight;
 
     // Column widths
