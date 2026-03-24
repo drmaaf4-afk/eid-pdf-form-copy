@@ -26,7 +26,7 @@ export async function POST(req) {
     // =========================
     // TABLE POSITION (OPTIMIZED)
     // =========================
-    const tableX = 80;
+    const tableX = 50;
     const tableY = 600;
     const tableWidth = 500;
     const tableHeight = 50;
