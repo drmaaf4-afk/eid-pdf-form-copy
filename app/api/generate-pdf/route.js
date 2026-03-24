@@ -6,49 +6,32 @@ export async function POST(req) {
   try {
     const { name, job, computerNo, days } = await req.json();
 
-    // Load template PDF
     const pdfPath = path.join(process.cwd(), 'public', 'eid-template.pdf');
     const existingPdfBytes = fs.readFileSync(pdfPath);
 
     const pdfDoc = await PDFDocument.load(existingPdfBytes);
     const page = pdfDoc.getPages()[0];
-
-    // Use standard font (for English)
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-    // Prevent overflow for long names
-    const safeName = (name || '').slice(0, 25);
+    const safeName = (name || '').slice(0, 30);
 
-    // Draw values (aligned to your form)
-    page.drawText(safeName, {
-      x: 430,
-      y: 610,
-      size: 10,
-      font,
-    });
+    function drawRightText(text, xRight, y, size = 10) {
+      const safeText = String(text || '');
+      const textWidth = font.widthOfTextAtSize(safeText, size);
 
-    page.drawText(job || '', {
-      x: 310,
-      y: 610,
-      size: 10,
-      font,
-    });
+      page.drawText(safeText, {
+        x: xRight - textWidth,
+        y,
+        size,
+        font,
+      });
+    }
 
-    page.drawText(computerNo || '', {
-      x: 205,
-      y: 610,
-      size: 10,
-      font,
-    });
+    drawRightText(safeName, 570, 610);
+    drawRightText(job || '', 430, 610);
+    drawRightText(computerNo || '', 300, 610);
+    drawRightText(days || '', 170, 610);
 
-    page.drawText(String(days || ''), {
-      x: 115,
-      y: 610,
-      size: 10,
-      font,
-    });
-
-    // Save PDF
     const pdfBytes = await pdfDoc.save();
 
     return new Response(pdfBytes, {
